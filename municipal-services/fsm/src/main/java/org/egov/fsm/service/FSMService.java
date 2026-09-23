@@ -37,6 +37,7 @@ import org.egov.fsm.web.model.FSMResponse;
 import org.egov.fsm.web.model.FSMSearchCriteria;
 import org.egov.fsm.web.model.PeriodicApplicationRequest;
 import org.egov.fsm.web.model.Workflow;
+import org.egov.fsm.web.model.driver.DriverResponse;
 import org.egov.fsm.web.model.dso.Vendor;
 import org.egov.fsm.web.model.dso.VendorSearchCriteria;
 import org.egov.fsm.web.model.user.User;
@@ -691,12 +692,15 @@ public class FSMService {
 		String dsoId = null;
 
 		fsmValidator.validateSearch(requestInfo, criteria);
+		log.info(criteria.toString());
 
 		if (requestInfo.getUserInfo().getType().equalsIgnoreCase(FSMConstants.CITIZEN)) {
 			checkRoleInValidateSearch(requestInfo, criteria);
 		}
+		
 		if (criteria.getMobileNumber() != null && StringUtils.hasText(criteria.getMobileNumber())) {
 			usersRespnse = userService.getUser(criteria, requestInfo);
+			log.info("usersRespnse " + usersRespnse);
 			if (usersRespnse != null && usersRespnse.getUser() != null && !usersRespnse.getUser().isEmpty()) {
 				List<String> uuids = usersRespnse.getUser().stream().map(User::getUuid).collect(Collectors.toList());
 				if (CollectionUtils.isEmpty(criteria.getOwnerIds())) {
@@ -712,6 +716,7 @@ public class FSMService {
 
 		if (!Objects.isNull(criteria.getIndividualIds()) && !criteria.getIndividualIds().isEmpty()) {
 			List<String> applicationIds = setApplicationIdsWithWorkers(criteria);
+			log.info("applicationIds " + applicationIds);
 			if (applicationIds.isEmpty()) {
 				return FSMResponse.builder().fsm(Collections.emptyList()).totalCount(0).build();
 			}
@@ -721,6 +726,8 @@ public class FSMService {
 
 		fsmResponse = repository.getFSMData(criteria, dsoId);
 		fsmList = fsmResponse.getFsm();
+		log.info("Fsm List"+ fsmList);
+
 		for (FSM fsm : fsmList) {
 //			String accountId = fsm.getAccountId();
 			fsm.setCitizen(
@@ -729,11 +736,12 @@ public class FSMService {
 				fsm.setDriver(driverService.driverSearch(fsm.getTenantId(), fsm.getDriverId(), requestInfo).getDriver()
 						.get(0));
 			}
+			log.info("FSM ID: " + fsm.getId() + ", Citizen Name: " + fsm.getCitizen().getName());
 		}
 //		if (!fsmList.isEmpty()) {
 //			enrichmentService.enrichFSMSearch(fsmList, requestInfo, criteria.getTenantId());
 //		}
-
+       log.info("FSM Response"+ fsmResponse);
 		return fsmResponse;
 	}
 
@@ -756,6 +764,13 @@ public class FSMService {
 			dsoService.getVendor(vendorSearchCriteria, requestInfo);
 
 		}
+		if (roles.stream().anyMatch(role -> Objects.equals(role.getCode(), FSMConstants.ROLE_FSM_DRIVER))) {
+
+			DriverResponse resp = driverService.driverSearch(criteria.getTenantId(), requestInfo.getUserInfo().getUuid(), requestInfo);
+            log.info(resp.toString());
+		}
+
+
 		// SM-1981 My Application list fixed for DSO number
 		if (criteria.tenantIdOnly()) {
 			criteria.setMobileNumber(requestInfo.getUserInfo().getMobileNumber());

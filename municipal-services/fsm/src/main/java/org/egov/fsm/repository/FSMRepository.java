@@ -95,6 +95,7 @@ public class FSMRepository {
 	public FSMResponse getFSMData(FSMSearchCriteria fsmSearchCriteria, String dsoId) {
 		List<Object> preparedStmtList = new ArrayList<>();
 		String query = fsmQueryBuilder.getFSMSearchQuery(fsmSearchCriteria, dsoId, preparedStmtList);
+		log.info("Query: " + query);
 		List<FSM> fsms = jdbcTemplate.query(query, preparedStmtList.toArray(), fsmRowMapper);
 		return FSMResponse.builder().fsm(fsms).totalCount(fsmRowMapper.getFullCount()).build();
 	}
