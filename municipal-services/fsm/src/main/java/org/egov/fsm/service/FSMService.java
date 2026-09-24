@@ -692,7 +692,7 @@ public class FSMService {
 		String dsoId = null;
 
 		fsmValidator.validateSearch(requestInfo, criteria);
-		log.info(criteria.toString());
+		log.info("Criteria "+criteria.toString());
 
 		if (requestInfo.getUserInfo().getType().equalsIgnoreCase(FSMConstants.CITIZEN)) {
 			checkRoleInValidateSearch(requestInfo, criteria);
@@ -724,7 +724,13 @@ public class FSMService {
 			criteria.setIds(applicationIds);
 		}
 
-		fsmResponse = repository.getFSMData(criteria, dsoId);
+		if(requestInfo.getUserInfo().getRoles().stream().anyMatch(role -> Objects.equals(role.getCode(), FSMConstants.ROLE_FSM_DRIVER))){
+            fsmResponse = repository.getCompletedApplicationData(criteria, requestInfo);
+		}
+        else{
+			fsmResponse = repository.getFSMData(criteria, dsoId);
+
+		}
 		fsmList = fsmResponse.getFsm();
 		log.info("Fsm List"+ fsmList);
 
@@ -953,4 +959,6 @@ public class FSMService {
 		return fsmRepository.getDataCountsForDashboard();
 	}
 
+
+	
 }

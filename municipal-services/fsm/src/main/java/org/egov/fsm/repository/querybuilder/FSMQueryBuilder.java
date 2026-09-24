@@ -1,8 +1,10 @@
 package org.egov.fsm.repository.querybuilder;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
+import org.egov.common.contract.request.RequestInfo;
 
 import org.egov.fsm.config.FSMConfiguration;
 import org.egov.fsm.web.model.FSMSearchCriteria;
@@ -46,6 +48,18 @@ public class FSMQueryBuilder {
 	public static final String GET_VEHICLE_TRIPS_LIST = "SELECT * FROM eg_vehicle_trip_detail WHERE referenceno= ? and status='ACTIVE' order by createdtime desc ";
 
 	public static final String GET_WAITING_FOR_DISPOSAL_VEHICLE_TRIPS_LIST = "SELECT * FROM eg_vehicle_trip_detail WHERE trip_id IN ( SELECT id FROM eg_vehicle_trip WHERE applicationstatus = 'WAITING_FOR_DISPOSAL')AND status = 'ACTIVE' AND referenceno = ? ORDER BY createdtime DESC ";
+
+    public static final String completedApplicationsQuery = " select count(*) OVER() AS full_count,fsm.*,fsm_address.*,fsm_geo.*,fsm_pit.*,fsm.id as fsm_id, fsm.createdby as fsm_createdby,"
+			+ "  fsm.lastmodifiedby as fsm_lastmodifiedby, fsm.createdtime as fsm_createdtime, fsm.lastmodifiedtime as fsm_lastmodifiedtime,"
+			+ "	 fsm.additionaldetails,fsm_address.id as fsm_address_id, fsm_address.additionaldetails as addressAdditionalDetails, fsm_geo.id as fsm_geo_id,"
+			+ "	 fsm_pit.id as fsm_pit_id, fsm_pit.additionalDetails as fsm_pit_additionalDetails "
+			+ "	 FROM eg_fsm_application fsm"
+			+ "	 INNER JOIN   eg_fsm_address fsm_address on fsm_address.fsm_id = fsm.id"
+			+ "	 LEFT OUTER JOIN  eg_fsm_geolocation fsm_geo on fsm_geo.address_id = fsm_address.id"
+			+ "	 LEFT OUTER JOIN  eg_fsm_pit_detail fsm_pit on fsm_pit.fsm_id = fsm.id"
+                        + "      INNER JOIN eg_driver fsm_driver on fsm_driver.id = fsm.driver_id"
+                        + "      INNER JOIN eg_user fsm_user on fsm_user.uuid = fsm_driver.owner_id";
+
 
 	public String getFSMSearchQuery(FSMSearchCriteria criteria, String dsoId, List<Object> preparedStmtList) {
 
@@ -318,5 +332,54 @@ public class FSMQueryBuilder {
 //		return builder.toString();
 		return dashboardSearchQuery;
 	}
+
+	public String getCompletedApplicationsSearchQuery(FSMSearchCriteria criteria,RequestInfo requestInfo, List<Object> preparedStmtList) {
+
+		StringBuilder builder = new StringBuilder(completedApplicationsQuery);
+		if (criteria.getTenantId() != null) {
+			if (criteria.getTenantId().split("\\.").length == 1) {
+				addClauseIfRequired(preparedStmtList, builder);
+				builder.append(" fsm.tenantid like ?");
+				preparedStmtList.add('%' + criteria.getTenantId() + '%');
+			} else {
+				addClauseIfRequired(preparedStmtList, builder);
+				builder.append(" fsm.tenantid=? ");
+				preparedStmtList.add(criteria.getTenantId());
+			}
+		}
+	
+			List<String> applicationStatus = Arrays.asList(
+				"CITIZEN_FEEDBACK_PENDING",
+				"COMPLETED"
+			);
+
+			addClauseIfRequired(preparedStmtList, builder);
+			builder.append(" fsm.applicationStatus IN (")
+				.append(createQuery(applicationStatus))
+				.append(")");
+			addToPreparedStatement(preparedStmtList, applicationStatus);
+
+		List<String> locality = criteria.getLocality();
+		if (!CollectionUtils.isEmpty(locality)) {
+			addClauseIfRequired(preparedStmtList, builder);
+			builder.append(" fsm_address.locality IN (").append(createQuery(locality)).append(")");
+			addToPreparedStatement(preparedStmtList, locality);
+
+		}
+
+		List<String> id = Arrays.asList(requestInfo.getUserInfo().getUuid());
+
+		if (!id.isEmpty()) {
+			addClauseIfRequired(preparedStmtList, builder);
+			builder.append(" fsm_driver.owner_id IN (").append(createQuery(id)).append(")");
+			addToPreparedStatement(preparedStmtList, id);
+
+		}
+
+		
+		return addPaginationWrapper(builder.toString(), preparedStmtList, criteria);
+
+	}
+
 
 }
