@@ -205,4 +205,13 @@ public class FSMRepository {
 		return jdbcTemplate.queryForMap(query.toString());
 	}
 
+	
+	public FSMResponse getCompletedApplicationData(FSMSearchCriteria criteria, RequestInfo requestInfo) {
+		List<Object> preparedStmtList = new ArrayList<>();
+		String query = fsmQueryBuilder.getCompletedApplicationsSearchQuery(criteria,requestInfo, preparedStmtList);
+		log.info("Query: " + query);
+		List<FSM> fsms = jdbcTemplate.query(query, preparedStmtList.toArray(), fsmRowMapper);
+		return FSMResponse.builder().fsm(fsms).totalCount(fsmRowMapper.getFullCount()).build();
+	}
+
 }
