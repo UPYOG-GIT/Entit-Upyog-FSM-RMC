@@ -13,7 +13,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Component
+@Slf4j
 public class FSMQueryBuilder {
 
 	@Autowired
@@ -337,6 +340,7 @@ public class FSMQueryBuilder {
 
 		StringBuilder builder = new StringBuilder(completedApplicationsQuery);
 		if (criteria.getTenantId() != null) {
+			log.info("Tenantid "+criteria.getTenantId());
 			if (criteria.getTenantId().split("\\.").length == 1) {
 				addClauseIfRequired(preparedStmtList, builder);
 				builder.append(" fsm.tenantid like ?");
@@ -361,6 +365,7 @@ public class FSMQueryBuilder {
 
 		List<String> locality = criteria.getLocality();
 		if (!CollectionUtils.isEmpty(locality)) {
+			log.info("locality "+criteria.getLocality().toString());
 			addClauseIfRequired(preparedStmtList, builder);
 			builder.append(" fsm_address.locality IN (").append(createQuery(locality)).append(")");
 			addToPreparedStatement(preparedStmtList, locality);
@@ -370,6 +375,7 @@ public class FSMQueryBuilder {
 		List<String> id = Arrays.asList(requestInfo.getUserInfo().getUuid());
 
 		if (!id.isEmpty()) {
+			log.info("User UUID "+id);
 			addClauseIfRequired(preparedStmtList, builder);
 			builder.append(" fsm_driver.owner_id IN (").append(createQuery(id)).append(")");
 			addToPreparedStatement(preparedStmtList, id);

@@ -726,8 +726,8 @@ public class FSMService {
 
 		if(requestInfo.getUserInfo().getRoles().stream().anyMatch(role -> Objects.equals(role.getCode(), FSMConstants.ROLE_FSM_DRIVER))){
             fsmResponse = repository.getCompletedApplicationData(criteria, requestInfo);
-		}
-        else{
+		} else {
+			log.info("Printing fsm response"+"uuid "+requestInfo.getUserInfo().getUuid()+"tenantId "+criteria.getTenantId());
 			fsmResponse = repository.getFSMData(criteria, dsoId);
 
 		}
