@@ -210,7 +210,14 @@ public class FSMRepository {
 		List<Object> preparedStmtList = new ArrayList<>();
 		String query = fsmQueryBuilder.getCompletedApplicationsSearchQuery(criteria,requestInfo, preparedStmtList);
 		log.info("Query: " + query);
+		log.info("Request Info " + requestInfo.toString());
 		List<FSM> fsms = jdbcTemplate.query(query, preparedStmtList.toArray(), fsmRowMapper);
+		if(fsms!=null && fsms.size()>0) {
+			log.info("fsms list size "+fsms.size());
+		}
+		else {
+			log.info("No records found for the given criteria");
+		}
 		return FSMResponse.builder().fsm(fsms).totalCount(fsmRowMapper.getFullCount()).build();
 	}
 
