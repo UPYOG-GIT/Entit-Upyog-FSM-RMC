@@ -72,6 +72,11 @@ const DriverDashboard = () => {
         label: t("ES_TITLE_INBOX"),
         count: total,
       },
+      {
+        link: "/fsm-ui/citizen/fsm/my-applications",
+        label: t("CS_COMMON_FSM_COMPLETED"),
+        count: 0,
+      },
     ],
     [total]
   );
@@ -83,9 +88,10 @@ const DriverDashboard = () => {
       if (Object.keys(info).length) setLoader(false);
     }
   }, [info, inbox]);
-
+  //alert("Loader is active");
   if (loader) {
     return <Loader />;
+    
   }
   const propsForModuleCard = {
     Icon: <ShippingTruck />,
