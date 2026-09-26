@@ -88,10 +88,8 @@ const DriverDashboard = () => {
       if (Object.keys(info).length) setLoader(false);
     }
   }, [info, inbox]);
-  //alert("Loader is active");
   if (loader) {
     return <Loader />;
-    
   }
   const propsForModuleCard = {
     Icon: <ShippingTruck />,
